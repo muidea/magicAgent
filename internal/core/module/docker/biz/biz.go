@@ -2,6 +2,9 @@ package biz
 
 import (
 	"fmt"
+	"github.com/muidea/magicAgent/internal/config"
+	"github.com/muidea/magicAgent/internal/core/base/biz"
+	"github.com/muidea/magicAgent/pkg/common"
 	"os"
 	"path"
 	"path/filepath"
@@ -10,11 +13,6 @@ import (
 	"github.com/muidea/magicCommon/event"
 	"github.com/muidea/magicCommon/foundation/log"
 	"github.com/muidea/magicCommon/task"
-
-	"github.com/muidea/magieAgent/internal/config"
-	"github.com/muidea/magieAgent/internal/core/base/biz"
-	"github.com/muidea/magieAgent/internal/core/module/docker/pkg/mariadb"
-	"github.com/muidea/magieAgent/pkg/common"
 )
 
 type Docker struct {
@@ -41,16 +39,10 @@ func New(
 }
 
 func (s *Docker) Create(serviceName, catalog string) (err *cd.Result) {
-	if catalog != common.Mariadb {
-		err = cd.NewError(cd.UnExpected, fmt.Sprintf("illegal catalog:%s", catalog))
-		return
-	}
-
 	cmdInfoPtr := &common.CmdInfo{
-		Service:     serviceName,
-		ServiceInfo: s.getDefaultServiceInfo(serviceName, catalog),
+		Service: serviceName,
 	}
-	commandFile, commandErr := s.getCommandFile(cmdInfoPtr, mariadb.ServiceDockerTemplate)
+	commandFile, commandErr := s.getCommandFile(cmdInfoPtr, "mariadb.ServiceDockerTemplate")
 	if commandErr != nil {
 		err = commandErr
 		return
@@ -67,16 +59,10 @@ func (s *Docker) Create(serviceName, catalog string) (err *cd.Result) {
 }
 
 func (s *Docker) Destroy(serviceName, catalog string) (err *cd.Result) {
-	if catalog != common.Mariadb {
-		err = cd.NewError(cd.UnExpected, fmt.Sprintf("illegal catalog:%s", catalog))
-		return
-	}
-
 	cmdInfoPtr := &common.CmdInfo{
-		Service:     serviceName,
-		ServiceInfo: s.getDefaultServiceInfo(serviceName, catalog),
+		Service: serviceName,
 	}
-	commandFile, commandErr := s.getCommandFile(cmdInfoPtr, mariadb.ServiceDockerTemplate)
+	commandFile, commandErr := s.getCommandFile(cmdInfoPtr, "mariadb.ServiceDockerTemplate")
 	if commandErr != nil {
 		err = commandErr
 		return
@@ -95,16 +81,10 @@ func (s *Docker) Destroy(serviceName, catalog string) (err *cd.Result) {
 }
 
 func (s *Docker) Start(serviceName, catalog string) (err *cd.Result) {
-	if catalog != common.Mariadb {
-		err = cd.NewError(cd.UnExpected, fmt.Sprintf("illegal catalog:%s", catalog))
-		return
-	}
-
 	cmdInfoPtr := &common.CmdInfo{
-		Service:     serviceName,
-		ServiceInfo: s.getDefaultServiceInfo(serviceName, catalog),
+		Service: serviceName,
 	}
-	commandFile, commandErr := s.getCommandFile(cmdInfoPtr, mariadb.ServiceDockerTemplate)
+	commandFile, commandErr := s.getCommandFile(cmdInfoPtr, "mariadb.ServiceDockerTemplate")
 	if commandErr != nil {
 		err = commandErr
 		return
@@ -121,16 +101,10 @@ func (s *Docker) Start(serviceName, catalog string) (err *cd.Result) {
 }
 
 func (s *Docker) Stop(serviceName, catalog string) (err *cd.Result) {
-	if catalog != common.Mariadb {
-		err = cd.NewError(cd.UnExpected, fmt.Sprintf("illegal catalog:%s", catalog))
-		return
-	}
-
 	cmdInfoPtr := &common.CmdInfo{
-		Service:     serviceName,
-		ServiceInfo: s.getDefaultServiceInfo(serviceName, catalog),
+		Service: serviceName,
 	}
-	commandFile, commandErr := s.getCommandFile(cmdInfoPtr, mariadb.ServiceDockerTemplate)
+	commandFile, commandErr := s.getCommandFile(cmdInfoPtr, "mariadb.ServiceDockerTemplate")
 	if commandErr != nil {
 		err = commandErr
 		return

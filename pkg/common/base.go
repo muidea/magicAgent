@@ -8,13 +8,7 @@ import (
 )
 
 const (
-	NotifyTimer             = "/timer/notify/"
-	NotifyRunning           = "/running/notify/"
-	SyncServiceDataToRemote = "/service/data/sync/remote/:id"
-	SyncServiceDataToLocal  = "/service/data/sync/local/:id"
-	BackupMariadbData       = "/service/mariadb/data/backup/:id"
-	RestoreMariadbData      = "/service/mariadb/data/restore/:id"
-	QueryMariadbStatus      = "/service/mariadb/status/query/:id"
+	NotifyRunning = "/running/notify/"
 )
 
 type ServiceParam struct {

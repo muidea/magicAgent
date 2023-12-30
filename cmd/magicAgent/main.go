@@ -8,8 +8,8 @@ import (
 	"github.com/muidea/magicCommon/application"
 	"github.com/muidea/magicCommon/foundation/log"
 
-	"github.com/muidea/magieAgent/internal/config"
-	"github.com/muidea/magieAgent/internal/core"
+	"github.com/muidea/magicAgent/internal/config"
+	"github.com/muidea/magicAgent/internal/core"
 )
 
 var listenPort = "8080"

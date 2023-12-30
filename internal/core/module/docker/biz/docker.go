@@ -3,6 +3,8 @@ package biz
 import (
 	"bytes"
 	"fmt"
+	"github.com/muidea/magicAgent/internal/config"
+	"github.com/muidea/magicAgent/pkg/common"
 	"os"
 	"path"
 	"path/filepath"
@@ -10,56 +12,11 @@ import (
 	"strings"
 	"text/template"
 
-	"gopkg.in/yaml.v2"
-
 	cd "github.com/muidea/magicCommon/def"
 	"github.com/muidea/magicCommon/event"
 	"github.com/muidea/magicCommon/foundation/log"
 	fp "github.com/muidea/magicCommon/foundation/path"
-
-	"github.com/muidea/magieAgent/internal/config"
-	"github.com/muidea/magieAgent/internal/core/module/docker/pkg/mariadb"
-	"github.com/muidea/magieAgent/pkg/common"
 )
-
-func (s *Docker) getDefaultServiceInfo(serviceName, catalog string) (ret *common.ServiceInfo) {
-	ret = &common.ServiceInfo{
-		Name:    serviceName,
-		Catalog: common.Mariadb,
-		Image:   common.DefaultMariadbImage,
-		Labels:  common.DefaultLabels,
-		Volumes: &common.Volumes{
-			ConfPath: &common.Path{
-				Name:  "config",
-				Type:  common.InnerPath,
-				Value: path.Join(config.GetConfigPath(), "conf.d"),
-			},
-			DataPath: &common.Path{
-				Name:  "dataPath",
-				Type:  common.HostPath,
-				Value: path.Join(config.GetDataPath(), serviceName),
-			},
-			BackPath: &common.Path{
-				Name:  "backPath",
-				Type:  common.HostPath,
-				Value: path.Join(config.GetBackPath(), serviceName),
-			},
-		},
-		Env: &common.Env{
-			Root:     common.DefaultMariadbRoot,
-			Password: common.DefaultMariadbPassword,
-		},
-		Svc: &common.Svc{
-			Host: config.GetLocalHost(),
-			Port: common.DefaultMariadbPort,
-		},
-		Replicas: 1,
-	}
-
-	ret.Labels["app"] = serviceName
-	ret.Labels["catalog"] = catalog
-	return
-}
 
 func (s *Docker) getYamlFile(cmdInfo *common.CmdInfo) (ret string, err *cd.Result) {
 	yamlPath := path.Join(config.GetWorkspace(), cmdInfo.ServiceInfo.Catalog)
@@ -175,20 +132,20 @@ func (s *Docker) loadCommandFile(yamlFile string) (ret []*common.ServiceInfo, er
 											serviceInfo.Image = items[1]
 										case "service.confPath":
 											serviceInfo.Volumes.ConfPath = &common.Path{
-												Name:  "config",
-												Type:  common.InnerPath,
+												Name: "config",
+												//Type:  common.InnerPath,
 												Value: items[1],
 											}
 										case "service.dataPath":
 											serviceInfo.Volumes.DataPath = &common.Path{
-												Name:  "dataPath",
-												Type:  common.InnerPath,
+												Name: "dataPath",
+												//Type:  common.InnerPath,
 												Value: items[1],
 											}
 										case "service.backPath":
 											serviceInfo.Volumes.BackPath = &common.Path{
-												Name:  "backPath",
-												Type:  common.InnerPath,
+												Name: "backPath",
+												//Type:  common.InnerPath,
 												Value: items[1],
 											}
 										case "service.root":
@@ -232,7 +189,7 @@ func (s *Docker) ExecuteCommand(ev event.Event, re event.Result) {
 	}
 
 	// docker exec mariadb001 /bin/bash -c 'mysql -uroot -prootkit -e "show master status\G;"'
-	commandFile, commandErr := s.getCommandFile(cmdInfoPtr, mariadb.ServiceDockerTemplate)
+	commandFile, commandErr := s.getCommandFile(cmdInfoPtr, "mariadb.ServiceDockerTemplate")
 	if commandErr != nil {
 		if re != nil {
 			re.Set(nil, commandErr)
@@ -268,7 +225,7 @@ func (s *Docker) CreateService(ev event.Event, re event.Result) {
 		return
 	}
 	catalogVal, catalogOK := catalog.(string)
-	if !catalogOK || catalogVal != common.Mariadb {
+	if !catalogOK {
 		log.Warnf("CreateService failed, illegal catalog")
 		return
 	}
@@ -297,7 +254,7 @@ func (s *Docker) DestroyService(ev event.Event, re event.Result) {
 		return
 	}
 	catalogVal, catalogOK := catalog.(string)
-	if !catalogOK || catalogVal != common.Mariadb {
+	if !catalogOK {
 		log.Warnf("DestroyService failed, illegal catalog")
 		return
 	}
@@ -321,7 +278,7 @@ func (s *Docker) StartService(ev event.Event, re event.Result) {
 		return
 	}
 
-	commandFile, commandErr := s.getCommandFile(cmdInfoPtr, mariadb.ServiceDockerTemplate)
+	commandFile, commandErr := s.getCommandFile(cmdInfoPtr, "mariadb.ServiceDockerTemplate")
 	if commandErr != nil {
 		if re != nil {
 			re.Set(nil, commandErr)
@@ -351,7 +308,7 @@ func (s *Docker) StopService(ev event.Event, re event.Result) {
 		return
 	}
 
-	commandFile, commandErr := s.getCommandFile(cmdInfoPtr, mariadb.ServiceDockerTemplate)
+	commandFile, commandErr := s.getCommandFile(cmdInfoPtr, "mariadb.ServiceDockerTemplate")
 	if commandErr != nil {
 		if re != nil {
 			re.Set(nil, commandErr)
@@ -381,7 +338,7 @@ func (s *Docker) JobService(ev event.Event, re event.Result) {
 		return
 	}
 
-	commandFile, commandErr := s.getCommandFile(cmdInfoPtr, mariadb.JobDockerTemplate)
+	commandFile, commandErr := s.getCommandFile(cmdInfoPtr, "mariadb.JobDockerTemplate")
 	if commandErr != nil {
 		if re != nil {
 			re.Set(nil, commandErr)
@@ -412,9 +369,7 @@ func (s *Docker) JobService(ev event.Event, re event.Result) {
 func (s *Docker) ListService(ev event.Event, re event.Result) {
 	var catalogList []string
 	param := ev.Data()
-	if param == nil {
-		catalogList = common.DefaultCatalogList
-	} else {
+	if param != nil {
 		catalogVal, catalogOK := param.(string)
 		if !catalogOK {
 			log.Warnf("ListService failed, illegal param")
@@ -477,11 +432,6 @@ func (s *Docker) QueryService(ev event.Event, re event.Result) {
 	}
 
 	catalog := ev.GetData("catalog")
-	if catalog == nil || catalog.(string) != common.Mariadb {
-		log.Warnf("QueryService failed, illegal catalog")
-		return
-	}
-
 	serviceInfoPtr, serviceInfoErr := s.Query(serviceName, catalog.(string))
 	if re != nil {
 		re.Set(serviceInfoPtr, serviceInfoErr)

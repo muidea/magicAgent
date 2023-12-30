@@ -6,5 +6,3 @@ const (
 )
 
 const ApiVersion = defaultVersion
-
-const APIKey = "X-API-Key"

@@ -11,13 +11,12 @@ import (
 
 	cd "github.com/muidea/magicCommon/def"
 	"github.com/muidea/magicCommon/event"
-	"github.com/muidea/magicCommon/foundation/log"
 	"github.com/muidea/magicCommon/foundation/net"
 	"github.com/muidea/magicCommon/task"
 
-	"github.com/muidea/magieAgent/internal/config"
-	"github.com/muidea/magieAgent/internal/core/base/biz"
-	"github.com/muidea/magieAgent/pkg/common"
+	"github.com/muidea/magicAgent/internal/config"
+	"github.com/muidea/magicAgent/internal/core/base/biz"
+	"github.com/muidea/magicAgent/pkg/common"
 )
 
 type changeCollection struct {
@@ -49,99 +48,17 @@ func New(
 		curRedoCollection: []*changeCollection{},
 	}
 
-	ptr.SubscribeFunc(common.NotifyTimer, ptr.timerCheck)
 	ptr.SubscribeFunc(common.NotifyService, ptr.serviceNotify)
 
 	return ptr
 }
 
-func (s *Base) GetKernelHealthStatus() bool {
-	statusVal := true
-	s.currentKernelService.Range(func(_, v any) bool {
-		serviceInfo := v.(*common.ServiceInfo)
-		if serviceInfo.Status == nil || !serviceInfo.Status.Available {
-			statusVal = false
-		}
-
-		return true
-	})
-
-	return statusVal
-}
-
-func (s *Base) GetKernelReadyStatus() bool {
-	statusVal := true
-	s.currentKernelService.Range(func(_, v any) bool {
-		serviceInfo := v.(*common.ServiceInfo)
-		_, slaveStatus, statusErr := s.QueryLocalMariadbStatus(serviceInfo.Name)
-		if statusErr != nil {
-			log.Warnf("GetKernelReadyStatus failed, s.QueryLocalMariadbStatus %v error:%v", serviceInfo, statusErr.Error())
-			statusVal = false
-			return true
-		}
-
-		if !slaveStatus.Enable {
-			return true
-		}
-		if slaveStatus.BehindSecond > 0 {
-			log.Warnf("GetKernelReadyStatus failed, s.QueryLocalMariadbStatus %v behind master:%d", serviceInfo, slaveStatus.BehindSecond)
-			statusVal = false
-		}
-		return true
-	})
-
-	return statusVal
-}
-
 func (s *Base) addKernelService(serviceInfo *common.ServiceInfo) {
-	if serviceInfo.Catalog != common.Mariadb {
-		return
-	}
-
 	s.currentKernelService.Store(serviceInfo.Name, serviceInfo)
 }
 
 func (s *Base) delKernelService(serviceInfo *common.ServiceInfo) {
-	if serviceInfo.Catalog != common.Mariadb {
-		return
-	}
-
 	s.currentKernelService.Delete(serviceInfo.Name)
-}
-
-func (s *Base) timerCheck(_ event.Event, _ event.Result) {
-	func() {
-		fileInfo, fileErr := os.Stat(config.GetConfigFile())
-		if fileErr != nil {
-			return
-		}
-
-		if s.curConfigFileInfo != nil && fileInfo.ModTime() == s.curConfigFileInfo.ModTime() {
-			return
-		}
-
-		curConfig := config.ReloadConfig()
-		if curConfig.Status == nil || s.curConfigPtr == nil {
-			s.curConfigFileInfo = fileInfo
-			s.curConfigPtr = curConfig
-
-			if s.curConfigPtr.Status != nil {
-				s.statusChange(s.curConfigPtr)
-			}
-			return
-		}
-
-		// 如果状态未发生变化，则不用继续
-		if !s.curConfigPtr.StatusChange(curConfig) {
-			return
-		}
-
-		s.curConfigFileInfo = fileInfo
-		s.curConfigPtr = curConfig
-		s.statusChange(s.curConfigPtr)
-	}()
-
-	s.checkStatusRedo()
 }
 
 func (s *Base) serviceNotify(ev event.Event, _ event.Result) {
@@ -179,102 +96,8 @@ func (s *Base) serviceNotify(ev event.Event, _ event.Result) {
 	return
 }
 
-func (s *Base) statusChange(cfgPtr *config.CfgItem) {
-	if cfgPtr.Status == nil {
-		log.Errorf("statusChange failed, status is nil")
-		return
-	}
-
-	queryEvent := event.NewEvent(common.ListService, s.ID(), common.K8sModule, nil, common.Mariadb)
-	result := s.SendEvent(queryEvent)
-	resultVal, resultErr := result.Get()
-	if resultErr != nil {
-		log.Errorf("query service list failed, err:%s", resultErr.Error())
-		return
-	}
-
-	catalog2ServiceList := resultVal.(common.Catalog2ServiceList)
-	changePtr := &changeCollection{
-		catalog2ServiceList: catalog2ServiceList,
-		configPtr:           cfgPtr.Dump(),
-		startTime:           time.Now(),
-		loopCount:           0,
-	}
-
-	s.curRedoCheckMutex.Lock()
-	defer s.curRedoCheckMutex.Unlock()
-	s.curRedoCollection = append(s.curRedoCollection, changePtr)
-	return
-}
-
-func (s *Base) checkStatusRedo() {
-	var curList []*changeCollection
-	func() {
-		s.curRedoCheckMutex.Lock()
-		s.curRedoCheckMutex.Unlock()
-		curList = s.curRedoCollection
-		s.curRedoCollection = []*changeCollection{}
-	}()
-
-	remainList := []*changeCollection{}
-	for _, val := range curList {
-		remainPtr := s.redoStatusChange(val)
-		if remainPtr != nil {
-			//if remainPtr.loopCount >= 10 {
-			if time.Since(remainPtr.startTime) > 30*time.Minute {
-				// 到这里说明执行超过30分钟都无法成功，不能继续处理了。
-				log.Warnf("drop status change, startTime-%v, Status-%v, loop count:%v", remainPtr.startTime, remainPtr.configPtr.Status, remainPtr.loopCount)
-				continue
-			}
-			remainList = append(remainList, remainPtr)
-		}
-	}
-
-	if len(remainList) == 0 {
-		return
-	}
-
-	s.curRedoCheckMutex.Lock()
-	s.curRedoCheckMutex.Unlock()
-	remainList = append(remainList, s.curRedoCollection...)
-	s.curRedoCollection = remainList
-}
-
-func (s *Base) redoStatusChange(ptr *changeCollection) (ret *changeCollection) {
-	failedCatalog2ServiceList := common.Catalog2ServiceList{}
-
-	for key, val := range ptr.catalog2ServiceList {
-		if key == common.Mariadb {
-			serviceList := common.ServiceList{}
-			for _, sv := range val {
-				err := s.SwitchMariadb(sv, ptr.configPtr)
-				if err != nil {
-					serviceList = append(serviceList, sv)
-				}
-			}
-
-			if len(serviceList) > 0 {
-				failedCatalog2ServiceList[key] = serviceList
-			}
-
-			continue
-		}
-	}
-
-	if len(failedCatalog2ServiceList) > 0 {
-		ret = &changeCollection{
-			catalog2ServiceList: failedCatalog2ServiceList,
-			configPtr:           ptr.configPtr,
-			startTime:           ptr.startTime,
-			loopCount:           ptr.loopCount + 1,
-		}
-	}
-
-	return
-}
-
 func (s *Base) queryLocalServiceInfo(serviceName, catalog string) (ret *common.ServiceInfo, err *cd.Result) {
-	ev := event.NewEvent(common.QueryService, s.ID(), common.K8sModule, nil, serviceName)
+	ev := event.NewEvent(common.QueryService, s.ID(), common.DockerModule, nil, serviceName)
 	ev.SetData("catalog", catalog)
 	result := s.SendEvent(ev)
 	resultVal, resultErr := result.Get()
@@ -311,32 +134,5 @@ func (s *Base) queryRemoteServiceInfo(serviceName, catalog string) (ret *common.
 	}
 
 	ret = result.ServiceInfo
-	return
-}
-
-func (s *Base) changeServiceEndpoint(serviceInfo *common.ServiceInfo) (err *cd.Result) {
-	remoteService, remoteErr := s.queryRemoteServiceInfo(serviceInfo.Name, serviceInfo.Catalog)
-	if remoteErr != nil {
-		err = remoteErr
-		log.Errorf("changeServiceEndpoint failed, s.queryRemoteServiceInfo %v error:%s", serviceInfo, remoteErr.Error())
-		return err
-	}
-
-	endpointPtr := &common.Endpoint{
-		Host: remoteService.Svc.Host,
-		Port: remoteService.Svc.Port,
-	}
-
-	ev := event.NewEvent(common.ChangeServiceEndpoints, s.ID(), common.K8sModule, nil, serviceInfo)
-	ev.SetData("endpoint", endpointPtr)
-	result := s.SendEvent(ev)
-	err = result.Error()
-	return
-}
-
-func (s *Base) restoreServiceEndpoint(serviceInfo *common.ServiceInfo) (err *cd.Result) {
-	ev := event.NewEvent(common.RestoreServiceEndpoints, s.ID(), common.K8sModule, nil, serviceInfo)
-	result := s.SendEvent(ev)
-	err = result.Error()
 	return
 }
