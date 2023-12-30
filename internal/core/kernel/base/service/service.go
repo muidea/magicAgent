@@ -1,9 +1,10 @@
 package service
 
 import (
+	engine "github.com/muidea/magicEngine"
+
 	"github.com/muidea/magicAgent/internal/core/kernel/base/biz"
 	"github.com/muidea/magicAgent/pkg/common"
-	engine "github.com/muidea/magicEngine"
 )
 
 // Base BaseService

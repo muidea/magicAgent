@@ -2,9 +2,6 @@ package biz
 
 import (
 	"fmt"
-	"github.com/muidea/magicAgent/internal/config"
-	"github.com/muidea/magicAgent/internal/core/base/biz"
-	"github.com/muidea/magicAgent/pkg/common"
 	"os"
 	"path"
 	"path/filepath"
@@ -13,6 +10,10 @@ import (
 	"github.com/muidea/magicCommon/event"
 	"github.com/muidea/magicCommon/foundation/log"
 	"github.com/muidea/magicCommon/task"
+
+	"github.com/muidea/magicAgent/internal/config"
+	"github.com/muidea/magicAgent/internal/core/base/biz"
+	"github.com/muidea/magicAgent/pkg/common"
 )
 
 type Docker struct {

@@ -9,8 +9,8 @@ import (
 	cd "github.com/muidea/magicCommon/def"
 	fn "github.com/muidea/magicCommon/foundation/net"
 
-	"github.com/muidea/magieAgent/internal/core/module/docker/biz"
-	"github.com/muidea/magieAgent/pkg/common"
+	"github.com/muidea/magicAgent/internal/core/module/docker/biz"
+	"github.com/muidea/magicAgent/pkg/common"
 )
 
 // Docker BaseService

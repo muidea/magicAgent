@@ -1,12 +1,14 @@
 package core
 
 import (
+	"sync"
+
+	engine "github.com/muidea/magicEngine"
+
 	cd "github.com/muidea/magicCommon/def"
 	"github.com/muidea/magicCommon/event"
 	"github.com/muidea/magicCommon/module"
 	"github.com/muidea/magicCommon/task"
-
-	engine "github.com/muidea/magicEngine"
 
 	"github.com/muidea/magicAgent/pkg/common"
 

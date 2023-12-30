@@ -1,0 +1,59 @@
+# github.com/cihub/seelog v0.0.0-20170130134532-f561c5e57575
+## explicit
+github.com/cihub/seelog
+github.com/cihub/seelog/archive
+github.com/cihub/seelog/archive/gzip
+github.com/cihub/seelog/archive/tar
+github.com/cihub/seelog/archive/zip
+# github.com/go-playground/locales v0.14.1
+## explicit; go 1.17
+github.com/go-playground/locales
+github.com/go-playground/locales/currency
+# github.com/go-playground/universal-translator v0.18.1
+## explicit; go 1.18
+github.com/go-playground/universal-translator
+# github.com/go-playground/validator/v10 v10.11.2
+## explicit; go 1.18
+github.com/go-playground/validator/v10
+# github.com/google/uuid v1.3.0
+## explicit
+github.com/google/uuid
+# github.com/kr/text v0.2.0
+## explicit
+# github.com/leodido/go-urn v1.2.1
+## explicit; go 1.13
+github.com/leodido/go-urn
+# github.com/muidea/magicCommon v1.3.51
+## explicit; go 1.19
+github.com/muidea/magicCommon/application
+github.com/muidea/magicCommon/def
+github.com/muidea/magicCommon/event
+github.com/muidea/magicCommon/execute
+github.com/muidea/magicCommon/foundation/log
+github.com/muidea/magicCommon/foundation/net
+github.com/muidea/magicCommon/foundation/path
+github.com/muidea/magicCommon/foundation/util
+github.com/muidea/magicCommon/module
+github.com/muidea/magicCommon/service
+github.com/muidea/magicCommon/task
+# github.com/muidea/magicEngine v1.3.2
+## explicit; go 1.19
+github.com/muidea/magicEngine
+# golang.org/x/crypto v0.6.0
+## explicit; go 1.17
+golang.org/x/crypto/sha3
+# golang.org/x/sync v0.4.0
+## explicit; go 1.17
+golang.org/x/sync/singleflight
+# golang.org/x/sys v0.5.0
+## explicit; go 1.17
+golang.org/x/sys/cpu
+# golang.org/x/text v0.7.0
+## explicit; go 1.17
+golang.org/x/text/internal/language
+golang.org/x/text/internal/language/compact
+golang.org/x/text/internal/tag
+golang.org/x/text/language
+# gopkg.in/yaml.v3 v3.0.1
+## explicit
+gopkg.in/yaml.v3

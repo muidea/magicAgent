@@ -3,8 +3,6 @@ package biz
 import (
 	"bytes"
 	"fmt"
-	"github.com/muidea/magicAgent/internal/config"
-	"github.com/muidea/magicAgent/pkg/common"
 	"os"
 	"path"
 	"path/filepath"
@@ -12,10 +10,15 @@ import (
 	"strings"
 	"text/template"
 
+	"gopkg.in/yaml.v3"
+
 	cd "github.com/muidea/magicCommon/def"
 	"github.com/muidea/magicCommon/event"
 	"github.com/muidea/magicCommon/foundation/log"
 	fp "github.com/muidea/magicCommon/foundation/path"
+
+	"github.com/muidea/magicAgent/internal/config"
+	"github.com/muidea/magicAgent/pkg/common"
 )
 
 func (s *Docker) getYamlFile(cmdInfo *common.CmdInfo) (ret string, err *cd.Result) {

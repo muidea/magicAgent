@@ -1,14 +1,15 @@
 package base
 
 import (
+	engine "github.com/muidea/magicEngine"
+
 	"github.com/muidea/magicCommon/event"
 	"github.com/muidea/magicCommon/module"
 	"github.com/muidea/magicCommon/task"
-	engine "github.com/muidea/magicEngine"
 
-	"github.com/muidea/magieAgent/internal/core/kernel/base/biz"
-	"github.com/muidea/magieAgent/internal/core/kernel/base/service"
-	"github.com/muidea/magieAgent/pkg/common"
+	"github.com/muidea/magicAgent/internal/core/kernel/base/biz"
+	"github.com/muidea/magicAgent/internal/core/kernel/base/service"
+	"github.com/muidea/magicAgent/pkg/common"
 )
 
 func init() {
