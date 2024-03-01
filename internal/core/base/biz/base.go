@@ -1,6 +1,7 @@
 package biz
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
@@ -100,7 +101,7 @@ func (s *Base) InnerDestination() string {
 	return s.ID()
 }
 
-func (s *Base) Execute(cmdName string, args ...string) (ret []byte, err *cd.Result) {
+func (s *Base) Execute(cmdName string, args ...string) (stdout []byte, stderr []byte, err *cd.Result) {
 	defer func() {
 		if errInfo := recover(); errInfo != nil {
 			err = cd.NewError(cd.UnExpected, fmt.Sprintf("%v", errInfo))
@@ -110,15 +111,21 @@ func (s *Base) Execute(cmdName string, args ...string) (ret []byte, err *cd.Resu
 
 	log.Infof("Execute, cmdName:%v, args:%v", cmdName, args)
 
+	output := &bytes.Buffer{}
+	errput := &bytes.Buffer{}
+
 	cmdPtr := exec.Command(cmdName, args...)
 	cmdPtr.Stdin = os.Stdin
-	byteVal, byteErr := cmdPtr.CombinedOutput()
+	cmdPtr.Stdout = output
+	cmdPtr.Stderr = errput
+	byteErr := cmdPtr.Run()
 	if byteErr != nil {
 		err = cd.NewError(cd.UnExpected, byteErr.Error())
 		log.Errorf("Execute failed, cmdName:%s, args:%v, error:%s", cmdName, args, err.Error())
 		return
 	}
 
-	ret = byteVal
+	stdout = output.Bytes()
+	stderr = errput.Bytes()
 	return
 }

@@ -66,12 +66,12 @@ func (s *ContentFilter) GetPkgPath() string {
 	return ""
 }
 
-func (s *ContentFilter) GetPkeKey() string {
-	if s.ParamItems != nil {
-		return path.Join(s.ParamItems.PkgPath, s.ParamItems.Name)
+func (s *ContentFilter) GetPkgKey() string {
+	if s.ParamItems == nil {
+		return ""
 	}
 
-	return ""
+	return path.Join(s.ParamItems.PkgPath, s.ParamItems.Name)
 }
 
 func (s *ContentFilter) Get(key string) (val string, ok bool) {

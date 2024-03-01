@@ -8,7 +8,6 @@ import (
 	"github.com/muidea/magicCommon/application"
 	"github.com/muidea/magicCommon/foundation/log"
 
-	"github.com/muidea/magicAgent/internal/config"
 	"github.com/muidea/magicAgent/internal/core"
 )
 
@@ -34,8 +33,6 @@ func main() {
 	initPprofMonitor(listenPort)
 
 	fmt.Printf("%s starting!\n", endpointName)
-
-	config.SetListenPort(listenPort)
 
 	corePtr, coreErr := core.New(endpointName, listenPort)
 	if coreErr != nil {

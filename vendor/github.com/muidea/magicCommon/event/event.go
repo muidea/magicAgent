@@ -1,6 +1,7 @@
 package event
 
 import (
+	"context"
 	"fmt"
 	cd "github.com/muidea/magicCommon/def"
 )
@@ -13,6 +14,7 @@ const (
 	Add    = "add"
 	Del    = "del"
 	Mod    = "mod"
+	Notify = "notify"
 )
 
 type baseEvent struct {
@@ -20,6 +22,7 @@ type baseEvent struct {
 	eventSource      string
 	eventDestination string
 	eventHeader      Values
+	eventContext     context.Context
 	eventData        map[string]interface{}
 	eventResult      interface{}
 }
@@ -43,8 +46,19 @@ func NewEvent(id, source, destination string, header Values, data interface{}) E
 	}
 }
 
+func NewEventWitchContext(id, source, destination string, header Values, context context.Context, data interface{}) Event {
+	return &baseEvent{
+		eventID:          id,
+		eventSource:      source,
+		eventDestination: destination,
+		eventHeader:      header,
+		eventContext:     context,
+		eventData:        map[string]interface{}{innerDataKey: data},
+	}
+}
+
 func NewResult(id, source, destination string) Result {
-	msg := fmt.Sprintf("illegal event, id:%s, source:%s, destination:%s", id, source, destination)
+	msg := fmt.Sprintf("illegal event, no result returned, id:%s, source:%s, destination:%s", id, source, destination)
 	return &baseResult{resultErr: cd.NewError(cd.Failed, msg), resultData: map[string]interface{}{}}
 }
 
@@ -62,6 +76,14 @@ func (s *baseEvent) Destination() string {
 
 func (s *baseEvent) Header() Values {
 	return s.eventHeader
+}
+
+func (s *baseEvent) Context() context.Context {
+	return s.eventContext
+}
+
+func (s *baseEvent) BindContext(ctx context.Context) {
+	s.eventContext = ctx
 }
 
 func (s *baseEvent) Data() interface{} {

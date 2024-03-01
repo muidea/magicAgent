@@ -1,6 +1,7 @@
 package event
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"sync"
@@ -8,6 +9,7 @@ import (
 	cd "github.com/muidea/magicCommon/def"
 	"github.com/muidea/magicCommon/execute"
 	"github.com/muidea/magicCommon/foundation/log"
+	"github.com/muidea/magicCommon/foundation/util"
 )
 
 type Values map[string]interface{}
@@ -78,6 +80,8 @@ type Event interface {
 	Source() string
 	Destination() string
 	Header() Values
+	Context() context.Context
+	BindContext(ctx context.Context)
 	Data() interface{}
 	SetData(key string, val interface{})
 	GetData(key string) interface{}
@@ -277,8 +281,14 @@ func (s *terminateData) Code() int {
 
 func (s actionChannel) run(hubPtr *hubImpl) {
 	terminateFlag := false
-	for actionData := range s {
-		hubPtr.Execute.Run(func() {
+	for {
+		actionData, actionOK := <-s
+		if !actionOK {
+			log.Criticalf("eventHub actionChannel unexpect!")
+			break
+		}
+
+		actionFunc := func() {
 			switch actionData.Code() {
 			case subscribe:
 				data := actionData.(*subscribeData)
@@ -303,7 +313,9 @@ func (s actionChannel) run(hubPtr *hubImpl) {
 				terminateFlag = true
 			default:
 			}
-		})
+		}
+
+		hubPtr.Execute.Run(actionFunc)
 
 		if terminateFlag {
 			break
@@ -536,7 +548,15 @@ func (s *hubImpl) postInternal(event Event) {
 	}()
 
 	for _, sv := range matchList {
-		sv.Notify(event, nil)
+		func() {
+			defer func() {
+				if err := recover(); err != nil {
+					stackInfo := util.GetStack(3)
+					log.Warnf("notify event exception, event:%v \nPANIC:%v \nstack:%s", event.ID(), err, stackInfo)
+				}
+			}()
+			sv.Notify(event, nil)
+		}()
 	}
 }
 
@@ -560,7 +580,20 @@ func (s *hubImpl) sendInternal(event Event, result Result) {
 	}()
 
 	for _, sv := range matchList {
-		sv.Notify(event, result)
+		func() {
+			defer func() {
+				if err := recover(); err != nil {
+					stackInfo := util.GetStack(3)
+					log.Warnf("notify event exception, event:%v \nPANIC:%v \nstack:%s", event.ID(), err, stackInfo)
+
+					if result != nil {
+						result.Set(nil, cd.NewError(cd.UnExpected, fmt.Sprintf("%v", err)))
+					}
+				}
+			}()
+
+			sv.Notify(event, result)
+		}()
 	}
 
 	if !finalFlag && result != nil {
@@ -594,7 +627,20 @@ func (s *simpleObserver) Notify(event Event, result Result) {
 	}()
 
 	if funcVal != nil {
-		funcVal(event, result)
+		func() {
+			defer func() {
+				if err := recover(); err != nil {
+					stackInfo := util.GetStack(3)
+					log.Warnf("notify event exception, event:%v \nPANIC:%v \nstack:%s", event.ID(), err, stackInfo)
+
+					if result != nil {
+						result.Set(nil, cd.NewError(cd.UnExpected, fmt.Sprintf("%v", err)))
+					}
+				}
+			}()
+
+			funcVal(event, result)
+		}()
 	}
 }
 

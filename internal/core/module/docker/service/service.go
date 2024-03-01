@@ -42,81 +42,34 @@ func (s *Docker) BindRegistry(
 
 // RegisterRoute 注册路由
 func (s *Docker) RegisterRoute() {
-	createRoute := engine.CreateRoute(common.CreateService, engine.POST, s.CreateHandle)
-	s.routeRegistry.AddRoute(createRoute)
-
-	destroyRoute := engine.CreateRoute(common.DestroyService, engine.POST, s.DestroyHandle)
-	s.routeRegistry.AddRoute(destroyRoute)
-
-	startRoute := engine.CreateRoute(common.StartService, engine.POST, s.StartHandle)
+	startRoute := engine.CreateRoute(common.StartService, engine.GET, s.StartHandle)
 	s.routeRegistry.AddRoute(startRoute)
 
-	stopRoute := engine.CreateRoute(common.StopService, engine.POST, s.StopHandle)
+	stopRoute := engine.CreateRoute(common.StopService, engine.GET, s.StopHandle)
 	s.routeRegistry.AddRoute(stopRoute)
 
-	queryRoute := engine.CreateRoute(common.QueryService, engine.POST, s.QueryHandle)
-	s.routeRegistry.AddRoute(queryRoute)
-}
-
-func (s *Docker) CreateHandle(_ context.Context, res http.ResponseWriter, req *http.Request) {
-	result := &common.CreateServiceResult{}
-	for {
-		param := &common.ServiceParam{}
-		err := fn.ParseJSONBody(req, nil, param)
-		if err != nil {
-			result.ErrorCode = cd.IllegalParam
-			result.Reason = "非法参数"
-			break
-		}
-		createErr := s.bizPtr.Create(param.Name, param.Catalog)
-		if createErr != nil {
-			result.Result = *createErr
-			break
-		}
-
-		break
-	}
-
-	fn.PackageHTTPResponse(res, result)
-}
-
-func (s *Docker) DestroyHandle(_ context.Context, res http.ResponseWriter, req *http.Request) {
-	result := &common.DestroyServiceResult{}
-	for {
-		param := &common.ServiceParam{}
-		err := fn.ParseJSONBody(req, nil, param)
-		if err != nil {
-			result.ErrorCode = cd.IllegalParam
-			result.Reason = "非法参数"
-			break
-		}
-		destroyErr := s.bizPtr.Destroy(param.Name, param.Catalog)
-		if destroyErr != nil {
-			result.Result = *destroyErr
-			break
-		}
-		break
-	}
-
-	fn.PackageHTTPResponse(res, result)
+	execRoute := engine.CreateRoute(common.ExecuteCommand, engine.POST, s.ExecHandle)
+	s.routeRegistry.AddRoute(execRoute)
 }
 
 func (s *Docker) StartHandle(_ context.Context, res http.ResponseWriter, req *http.Request) {
 	result := &common.StartServiceResult{}
 	for {
-		param := &common.ServiceParam{}
-		err := fn.ParseJSONBody(req, nil, param)
-		if err != nil {
+		serviceName := req.URL.Query().Get("service")
+		if serviceName == "" {
 			result.ErrorCode = cd.IllegalParam
-			result.Reason = "非法参数"
+			result.Reason = "illegal service name"
 			break
 		}
-		startErr := s.bizPtr.Start(param.Name, param.Catalog)
+
+		execStdout, execStderr, startErr := s.bizPtr.Start(serviceName)
 		if startErr != nil {
 			result.Result = *startErr
 			break
 		}
 
+		result.StdOut = execStdout
+		result.StdErr = execStderr
 		break
 	}
 
@@ -126,26 +79,29 @@ func (s *Docker) StartHandle(_ context.Context, res http.ResponseWriter, req *ht
 func (s *Docker) StopHandle(_ context.Context, res http.ResponseWriter, req *http.Request) {
 	result := &common.StopServiceResult{}
 	for {
-		param := &common.ServiceParam{}
-		err := fn.ParseJSONBody(req, nil, param)
-		if err != nil {
+		serviceName := req.URL.Query().Get("service")
+		if serviceName == "" {
 			result.ErrorCode = cd.IllegalParam
-			result.Reason = "非法参数"
+			result.Reason = "illegal service name"
 			break
 		}
-		stopErr := s.bizPtr.Stop(param.Name, param.Catalog)
+
+		execStdout, execStderr, stopErr := s.bizPtr.Stop(serviceName)
 		if stopErr != nil {
 			result.Result = *stopErr
 			break
 		}
+
+		result.StdOut = execStdout
+		result.StdErr = execStderr
 		break
 	}
 
 	fn.PackageHTTPResponse(res, result)
 }
 
-func (s *Docker) QueryHandle(_ context.Context, res http.ResponseWriter, req *http.Request) {
-	result := &common.QueryServiceResult{}
+func (s *Docker) ExecHandle(_ context.Context, res http.ResponseWriter, req *http.Request) {
+	result := &common.ExecServiceResult{}
 	for {
 		param := &common.ServiceParam{}
 		err := fn.ParseJSONBody(req, nil, param)
@@ -154,13 +110,15 @@ func (s *Docker) QueryHandle(_ context.Context, res http.ResponseWriter, req *ht
 			result.Reason = "非法参数"
 			break
 		}
-		serviceInfo, serviceErr := s.bizPtr.Query(param.Name, param.Catalog)
-		if serviceErr != nil {
-			result.Result = *serviceErr
+
+		execStdout, execStderr, execErr := s.bizPtr.Exec(param.Service, param.CmdParam)
+		if execErr != nil {
+			result.Result = *execErr
 			break
 		}
 
-		result.ServiceInfo = serviceInfo
+		result.StdOut = execStdout
+		result.StdErr = execStderr
 		break
 	}
 
