@@ -13,9 +13,7 @@ var defaultConfig = `
     "remoteHost": [
         "192.168.18.205"
     ],
-    "guards": [
-        "192.168.18.205"
-    ],
+    "guards": "mariadb001",
     "rayLink": {
         "serverUrl": "192.168.18.204",
         "account": "192.168.18.205",
@@ -57,7 +55,7 @@ func GetRemoteHost() []string {
 	return configItem.RemoteHost
 }
 
-func GetGuards() []string {
+func GetGuards() string {
 	return configItem.Guards
 }
 
@@ -78,7 +76,7 @@ type ServerInfo struct {
 type CfgItem struct {
 	LocalHost  string      `json:"localHost"`
 	RemoteHost []string    `json:"remoteHost"`
-	Guards     []string    `json:"guards"`
+	Guards     string      `json:"guards"`
 	RayLink    *ServerInfo `json:"rayLink"`
 	EMail      *ServerInfo `json:"email"`
 }

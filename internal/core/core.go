@@ -2,6 +2,7 @@ package core
 
 import (
 	"sync"
+	"time"
 
 	engine "github.com/muidea/magicEngine"
 
@@ -14,7 +15,25 @@ import (
 
 	_ "github.com/muidea/magicAgent/internal/core/kernel/base"
 	_ "github.com/muidea/magicAgent/internal/core/module/docker"
+	_ "github.com/muidea/magicAgent/internal/core/module/mariadb"
 )
+
+type timerCheckTask struct {
+	eventHub event.Hub
+
+	preTime time.Time
+}
+
+func (s *timerCheckTask) Run() {
+	eid := common.NotifyTimer
+
+	curTime := time.Now()
+	timerNotify := &common.TimerNotify{PreTime: s.preTime, CurTime: curTime}
+	eventPtr := event.NewEvent(eid, "/", "/#", nil, timerNotify)
+	s.eventHub.Post(eventPtr)
+
+	s.preTime = curTime
+}
 
 // New 新建Core
 func New(endpointName, listenPort string) (ret *Core, err error) {
@@ -74,6 +93,9 @@ func (s *Core) Run() {
 
 		ev := event.NewEvent(common.NotifyRunning, "/", "/#", nil, nil)
 		s.eventHub.Post(ev)
+
+		checkTask := &timerCheckTask{eventHub: s.eventHub, preTime: time.Now()}
+		s.backgroundRoutine.Timer(checkTask, 2*time.Second, 0)
 	}()
 
 	wg.Wait()

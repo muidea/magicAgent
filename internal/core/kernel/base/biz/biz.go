@@ -20,9 +20,14 @@ func New(
 		Base: biz.New(common.BaseModule, eventHub, backgroundRoutine),
 	}
 
+	ptr.SubscribeFunc(common.NotifyTimer, ptr.timerCheck)
 	ptr.SubscribeFunc(common.NotifyService, ptr.serviceNotify)
 
 	return ptr
+}
+
+func (s *Base) timerCheck(ev event.Event, _ event.Result) {
+	return
 }
 
 func (s *Base) serviceNotify(ev event.Event, _ event.Result) {

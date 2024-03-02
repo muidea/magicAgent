@@ -7,6 +7,7 @@ import (
 )
 
 const (
+	NotifyTimer   = "/timer/notify/"
 	NotifyRunning = "/running/notify/"
 )
 
