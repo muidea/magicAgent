@@ -90,6 +90,7 @@ type ServerInfo struct {
 	ServerUrl string `json:"serverUrl"`
 	Account   string `json:"account"`
 	Password  string `json:"password"`
+	Receiver  string `json:"receiver"`
 }
 
 type CfgItem struct {

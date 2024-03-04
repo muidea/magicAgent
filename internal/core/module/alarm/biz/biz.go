@@ -1,12 +1,18 @@
 package biz
 
 import (
-	"github.com/muidea/magicAgent/internal/config"
+	"encoding/base64"
+	"fmt"
+	"net/http"
+	"net/url"
+
 	cd "github.com/muidea/magicCommon/def"
 	"github.com/muidea/magicCommon/event"
 	"github.com/muidea/magicCommon/foundation/log"
+	"github.com/muidea/magicCommon/foundation/net"
 	"github.com/muidea/magicCommon/task"
 
+	"github.com/muidea/magicAgent/internal/config"
 	"github.com/muidea/magicAgent/internal/core/base/biz"
 	"github.com/muidea/magicAgent/pkg/common"
 )
@@ -55,9 +61,62 @@ func (s *Alarm) SendAlarm(alarmInfo *common.AlarmInfo) (err *cd.Result) {
 }
 
 func (s *Alarm) sendEMail(alarmInfo *common.AlarmInfo, emailServer *config.ServerInfo) (err *cd.Result) {
+	sendErr := net.SendMail(
+		emailServer.Account,
+		emailServer.Password,
+		emailServer.ServerUrl,
+		[]string{emailServer.Receiver},
+		alarmInfo.Title,
+		alarmInfo.Content,
+		[]string{},
+		"text",
+	)
+	if sendErr == nil {
+		return
+	}
+
+	log.Errorf("sendRayLink failed, error:%s", sendErr.Error())
+	err = cd.NewError(cd.UnExpected, sendErr.Error())
 	return
 }
 
+/*
+{
+    "toJobNos": "20070111",
+    "type": "oa",
+    "body": {
+        "title": "SPC异常消息通知2222",
+        "content": "测试"
+    }
+}
+
+serverUrl: http://10.192.20.6:50000/RESTAdapter/ALL/sendMsgByZLSPCToMSB
+user: zlmes_pro
+password: qwert123
+*/
+
+type RayLinkMessage struct {
+	ToJobNos string            `json:"toJobNos"`
+	Type     string            `json:"type"`
+	Body     *common.AlarmInfo `json:"body"`
+}
+
 func (s *Alarm) sendRayLink(alarmInfo *common.AlarmInfo, rayLink *config.ServerInfo) (err *cd.Result) {
+	msg := &RayLinkMessage{
+		ToJobNos: rayLink.Receiver,
+		Type:     "oa",
+		Body:     alarmInfo,
+	}
+
+	header := url.Values{}
+	header.Set("Authorization", fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(rayLink.Account+":"+rayLink.Password))))
+	httpClient := &http.Client{}
+	responseVal, responseErr := net.HTTPPost(httpClient, rayLink.ServerUrl, msg, nil, header)
+	if responseErr == nil {
+		return
+	}
+
+	log.Errorf("sendRayLink failed, response:%s", responseVal)
+	err = cd.NewError(cd.UnExpected, responseErr.Error())
 	return
 }
