@@ -59,13 +59,13 @@ func LoadConfig(cfgFile string) (err error) {
 	return
 }
 
-func GetWorkspace() string {
+func GetWorkPath() string {
 	return currentWorkPath
 }
 
 func EnableTrace() bool {
-	_, ok := os.LookupEnv("Enable_Trace")
-	if ok {
+	val, ok := os.LookupEnv("Enable_Trace")
+	if ok && val == "1" {
 		return true
 	}
 

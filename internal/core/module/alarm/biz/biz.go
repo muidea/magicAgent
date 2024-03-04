@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
+	"path"
 
 	cd "github.com/muidea/magicCommon/def"
 	"github.com/muidea/magicCommon/event"
@@ -56,6 +58,8 @@ func (s *Alarm) SendAlarm(alarmInfo *common.AlarmInfo) (err *cd.Result) {
 	if rayLinkServer != nil {
 		_ = s.sendRayLink(alarmInfo, rayLinkServer)
 	}
+
+	s.recordAlarmInfo(alarmInfo)
 
 	return
 }
@@ -119,4 +123,39 @@ func (s *Alarm) sendRayLink(alarmInfo *common.AlarmInfo, rayLink *config.ServerI
 	log.Errorf("sendRayLink failed, error:%s, response:%s", responseErr.Error(), responseVal)
 	err = cd.NewError(cd.UnExpected, responseErr.Error())
 	return
+}
+
+func (s *Alarm) recordAlarmInfo(alarmInfo *common.AlarmInfo) {
+	logFullPath := path.Join(config.GetWorkPath(), "log", "alarm.txt")
+	logPath, _ := path.Split(logFullPath)
+	_ = os.MkdirAll(logPath, os.ModePerm)
+
+	fileHandle, fileErr := os.OpenFile(logFullPath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0660)
+	if fileErr != nil {
+		log.Errorf("recordAlarmInfo failed, open log file %s failed, error:%s", logFullPath, fileErr.Error())
+		return
+	}
+	defer fileHandle.Close()
+
+	_, writeErr := fileHandle.WriteString("\n-------------------------------------\n")
+	if writeErr != nil {
+		log.Errorf("write alarm info begin failed")
+		return
+	}
+
+	_, writeErr = fileHandle.WriteString(alarmInfo.Title + "\n")
+	if writeErr != nil {
+		log.Errorf("write alarm info title failed")
+		return
+	}
+	_, writeErr = fileHandle.WriteString(alarmInfo.Content + "\n")
+	if writeErr != nil {
+		log.Errorf("write alarm info content failed")
+		return
+	}
+	_, writeErr = fileHandle.WriteString("-------------------------------------\n")
+	if writeErr != nil {
+		log.Errorf("write alarm info end failed")
+		return
+	}
 }
