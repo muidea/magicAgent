@@ -125,7 +125,9 @@ func (s *Base) Execute(cmdName string, args ...string) (stdout []byte, stderr []
 	byteErr := cmdPtr.Run()
 	if byteErr != nil {
 		err = cd.NewError(cd.UnExpected, byteErr.Error())
-		log.Errorf("Execute failed, cmdName:%s, args:%v, error:%s", cmdName, args, err.Error())
+		if config.EnableTrace() {
+			log.Errorf("Execute failed, cmdName:%s, args:%v, error:%s", cmdName, args, err.Error())
+		}
 		return
 	}
 

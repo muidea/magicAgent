@@ -66,6 +66,9 @@ func (s *Base) timerCheck(_ event.Event, _ event.Result) {
 
 				s.unexpectCount++
 			} else {
+				if s.unexpectCount > 0 {
+					log.Infof("Detected %s back to normal", mariadbService)
+				}
 				s.unexpectCount = 0
 			}
 		}
@@ -94,7 +97,9 @@ func (s *Base) queryMariadbStatus(mariadbService string) *common.ClusterStatus {
 	result := s.SendEvent(ev)
 	statusVal, statusErr := result.Get()
 	if statusErr != nil {
-		log.Errorf("queryMariadbStatus failed, error:%s", statusErr.Error())
+		if config.EnableTrace() {
+			log.Errorf("queryMariadbStatus failed, error:%s", statusErr.Error())
+		}
 		return nil
 	}
 

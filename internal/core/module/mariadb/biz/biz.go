@@ -11,6 +11,7 @@ import (
 	"github.com/muidea/magicCommon/foundation/log"
 	"github.com/muidea/magicCommon/task"
 
+	"github.com/muidea/magicAgent/internal/config"
 	"github.com/muidea/magicAgent/internal/core/base/biz"
 	"github.com/muidea/magicAgent/pkg/common"
 )
@@ -58,7 +59,9 @@ func (s *Mariadb) QueryMariadbClusterStatus(serviceName string) (ret *common.Clu
 	result := s.SendEvent(execEvent)
 	execVal, execErr := result.Get()
 	if execErr != nil {
-		log.Errorf("queryMariadbCluster failed, error:%s", execErr.Error())
+		if config.EnableTrace() {
+			log.Errorf("queryMariadbCluster failed, error:%s", execErr.Error())
+		}
 		err = execErr
 		return
 	}
