@@ -8,11 +8,13 @@ import (
 	"github.com/muidea/magicCommon/application"
 	"github.com/muidea/magicCommon/foundation/log"
 
+	"github.com/muidea/magicAgent/internal/config"
 	"github.com/muidea/magicAgent/internal/core"
 )
 
 var listenPort = "8080"
 var endpointName = "magicAgent"
+var configFile = ""
 
 func initPprofMonitor(listenPort string) {
 	addr := ":1" + listenPort
@@ -28,9 +30,18 @@ func initPprofMonitor(listenPort string) {
 func main() {
 	flag.StringVar(&listenPort, "ListenPort", listenPort, "listen address")
 	flag.StringVar(&endpointName, "EndpointName", endpointName, "endpoint name.")
+	flag.StringVar(&configFile, "Config", configFile, "config file path")
 	flag.Parse()
 
 	initPprofMonitor(listenPort)
+
+	if configFile != "" {
+		configErr := config.LoadConfig(configFile)
+		if configErr != nil {
+			log.Errorf("load config file failed, error:%s", configErr.Error())
+			return
+		}
+	}
 
 	fmt.Printf("%s starting!\n", endpointName)
 

@@ -29,18 +29,33 @@ var defaultConfig = `
 var currentWorkPath string
 var configItem *CfgItem
 
-const cfgFile = "/var/app/config/cfg.json"
+const cfgPath = "/var/app/config/cfg.json"
 
 func init() {
+	err := LoadConfig(cfgPath)
+	if err == nil {
+		return
+	}
+
 	cfg := &CfgItem{}
-	err := fu.LoadConfig(cfgFile, cfg)
+	_ = json.Unmarshal([]byte(defaultConfig), cfg)
+	configItem = cfg
+	currentWorkPath, _ = os.Getwd()
+}
+
+func LoadConfig(cfgFile string) (err error) {
+	if cfgFile == "" {
+		return
+	}
+
+	cfg := &CfgItem{}
+	err = fu.LoadConfig(cfgFile, cfg)
 	if err != nil {
-		_ = json.Unmarshal([]byte(defaultConfig), cfg)
+		return
 	}
 
 	configItem = cfg
-
-	currentWorkPath, _ = os.Getwd()
+	return
 }
 
 func GetWorkspace() string {
