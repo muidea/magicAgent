@@ -28,6 +28,7 @@ var defaultConfig = `
 
 var currentWorkPath string
 var configItem *CfgItem
+var enableTrace bool
 
 const cfgPath = "/var/app/config/cfg.json"
 
@@ -60,6 +61,15 @@ func LoadConfig(cfgFile string) (err error) {
 
 func GetWorkspace() string {
 	return currentWorkPath
+}
+
+func EnableTrace() bool {
+	_, ok := os.LookupEnv("Enable_Trace")
+	if ok {
+		return true
+	}
+
+	return enableTrace
 }
 
 func GetLocalHost() string {

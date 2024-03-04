@@ -11,6 +11,8 @@ import (
 	"github.com/muidea/magicCommon/event"
 	"github.com/muidea/magicCommon/foundation/log"
 	"github.com/muidea/magicCommon/task"
+
+	"github.com/muidea/magicAgent/internal/config"
 )
 
 type Base struct {
@@ -109,7 +111,9 @@ func (s *Base) Execute(cmdName string, args ...string) (stdout []byte, stderr []
 		}
 	}()
 
-	log.Infof("Execute, cmdName:%v, args:%v", cmdName, args)
+	if config.EnableTrace() {
+		log.Infof("Execute, cmdName:%v, args:%v", cmdName, args)
+	}
 
 	output := &bytes.Buffer{}
 	errput := &bytes.Buffer{}

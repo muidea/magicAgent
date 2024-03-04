@@ -75,7 +75,7 @@ func (s *Alarm) sendEMail(alarmInfo *common.AlarmInfo, emailServer *config.Serve
 		return
 	}
 
-	log.Errorf("sendRayLink failed, error:%s", sendErr.Error())
+	log.Errorf("sendEMail failed, error:%s", sendErr.Error())
 	err = cd.NewError(cd.UnExpected, sendErr.Error())
 	return
 }
@@ -116,7 +116,7 @@ func (s *Alarm) sendRayLink(alarmInfo *common.AlarmInfo, rayLink *config.ServerI
 		return
 	}
 
-	log.Errorf("sendRayLink failed, response:%s", responseVal)
+	log.Errorf("sendRayLink failed, error:%s, response:%s", responseErr.Error(), responseVal)
 	err = cd.NewError(cd.UnExpected, responseErr.Error())
 	return
 }
