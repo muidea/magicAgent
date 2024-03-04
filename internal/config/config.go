@@ -10,7 +10,7 @@ import (
 var defaultConfig = `
 {
     "localHost": "192.168.18.204",
-    "remoteHost": [
+    "clusterHosts": [
         "192.168.18.205"
     ],
     "guards": "mariadb001",
@@ -51,12 +51,16 @@ func GetLocalHost() string {
 	return configItem.LocalHost
 }
 
-func GetRemoteHost() []string {
-	return configItem.RemoteHost
+func GetClusterHosts() []string {
+	return configItem.ClusterHosts
 }
 
 func GetGuards() string {
 	return configItem.Guards
+}
+
+func GetTimeOut() int {
+	return configItem.TimeOut
 }
 
 func GetRayLinkInfo() *ServerInfo {
@@ -74,9 +78,10 @@ type ServerInfo struct {
 }
 
 type CfgItem struct {
-	LocalHost  string      `json:"localHost"`
-	RemoteHost []string    `json:"remoteHost"`
-	Guards     string      `json:"guards"`
-	RayLink    *ServerInfo `json:"rayLink"`
-	EMail      *ServerInfo `json:"email"`
+	LocalHost    string      `json:"localHost"`
+	ClusterHosts []string    `json:"clusterHosts"`
+	Guards       string      `json:"guards"`
+	TimeOut      int         `json:"timeOut"`
+	RayLink      *ServerInfo `json:"rayLink"`
+	EMail        *ServerInfo `json:"email"`
 }

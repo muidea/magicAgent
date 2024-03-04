@@ -14,6 +14,7 @@ import (
 	"github.com/muidea/magicAgent/pkg/common"
 
 	_ "github.com/muidea/magicAgent/internal/core/kernel/base"
+	_ "github.com/muidea/magicAgent/internal/core/module/alarm"
 	_ "github.com/muidea/magicAgent/internal/core/module/docker"
 	_ "github.com/muidea/magicAgent/internal/core/module/mariadb"
 )
